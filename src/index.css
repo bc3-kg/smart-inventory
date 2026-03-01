@@ -1,0 +1,99 @@
+/* file:///d:/workspace/inventory-app/src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Professional High-Contrast Light Palette */
+  --color-background: #F1F5F9;
+  --color-surface: #FFFFFF;
+  --color-primary: #3730A3;
+  /* Deep Indigo 800 for better contrast */
+  --color-secondary: #BE185D;
+  /* Dark Pink 700 */
+  --color-error: #B91C1C;
+  /* Red 700 */
+  --color-success: #047857;
+  /* Emerald 700 */
+  --color-text: #0F172A;
+  /* Slate 900 */
+  --color-text-dim: #475569;
+  /* Slate 600 */
+
+  --gradient-1: rgba(55, 48, 163, 0.08);
+  --gradient-2: rgba(190, 24, 93, 0.04);
+}
+
+/* Dark Mode Mapping - Muted Primary, No Neon */
+.dark {
+  --color-background: #020617;
+  /* Slate 950 */
+  --color-surface: #0F172A;
+  /* Slate 900 */
+  --color-primary: #6366F1;
+  /* Muted Indigo 500 (Not too bright) */
+  --color-secondary: #D946EF;
+  --color-error: #EF4444;
+  --color-success: #10B981;
+  --color-text: #F8FAFC;
+  --color-text-dim: #94A3B8;
+
+  --gradient-1: rgba(99, 102, 241, 0.12);
+  --gradient-2: rgba(217, 70, 239, 0.06);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: 'Outfit', 'Inter', sans-serif;
+  overflow-x: hidden;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+#root {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+}
+
+@layer components {
+  .card-premium {
+    @apply transition-all duration-500 rounded-[32px] p-6 border;
+    background-color: var(--color-surface);
+    border-color: rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark .card-premium {
+    background: linear-gradient(165deg, rgba(30, 41, 59, 1), rgba(15, 23, 42, 1));
+    border-color: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 20px;
+  border: 2px solid var(--color-background);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
