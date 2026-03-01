@@ -15,9 +15,9 @@
 Smart Inventoryは単なるデータベースではありません。現場の士気を高める洗練されたデザインと、直感的な操作性を追求しています。
 
 <p align="center">
-  <img src="public/screenshots/dashboard.png" width="280" alt="ダッシュボード" title="直感的なダッシュボード" />
-  <img src="public/screenshots/inventory.png" width="280" alt="在庫一覧" title="スマートな在庫一覧" />
-  <img src="public/screenshots/activity.png" width="280" alt="アクティビティ履歴" title="詳細な履歴ログ" />
+  <img src="public/screenshots/dashboard.png" height="700" alt="ダッシュボード" title="直感的なダッシュボード" style="margin: 0 10px;" />
+  <img src="public/screenshots/inventory.png" height="700" alt="在庫一覧" title="スマートな在庫一覧" style="margin: 0 10px;" />
+  <img src="public/screenshots/activity.png" height="700" alt="アクティビティ履歴" title="詳細な履歴ログ" style="margin: 0 10px;" />
 </p>
 
 ---
