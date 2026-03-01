@@ -4,20 +4,14 @@ import { Languages, Moon, Bell, Info, ShieldCheck, ChevronRight, Sun, ExternalLi
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 
-const Settings: React.FC = () => {
-    const { t, i18n } = useTranslation();
-    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
-    const [notifications, setNotifications] = useState(localStorage.getItem('notifications') !== 'false');
+interface SettingsProps {
+    theme: string;
+    setTheme: (theme: string) => void;
+}
 
-    useEffect(() => {
-        // Use standard 'dark' class for Tailwind v3 compatibility
-        if (theme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-        localStorage.setItem('theme', theme);
-    }, [theme]);
+const Settings: React.FC<SettingsProps> = ({ theme, setTheme }) => {
+    const { t, i18n } = useTranslation();
+    const [notifications, setNotifications] = useState(localStorage.getItem('notifications') !== 'false');
 
     const toggleLanguage = () => {
         const newLang = i18n.language.startsWith('ja') ? 'en' : 'ja';
@@ -25,7 +19,7 @@ const Settings: React.FC = () => {
     };
 
     const toggleTheme = () => {
-        setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+        setTheme(theme === 'dark' ? 'light' : 'dark');
     };
 
     const toggleNotifications = () => {

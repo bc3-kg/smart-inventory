@@ -13,6 +13,16 @@ const App: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'home' | 'products' | 'activity' | 'settings'>('home');
     const [showAddForm, setShowAddForm] = useState(false);
     const { products, isLoading, error, addProduct } = useInventory();
+    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+    React.useEffect(() => {
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        localStorage.setItem('theme', theme);
+    }, [theme]);
 
     const handleAddProduct = async (data: any) => {
         try {
@@ -30,7 +40,7 @@ const App: React.FC = () => {
                 {activeTab === 'home' && <Dashboard products={products} isLoading={isLoading} />}
                 {activeTab === 'products' && <ProductList products={products} isLoading={isLoading} />}
                 {activeTab === 'activity' && <ActivityLog />}
-                {activeTab === 'settings' && <Settings />}
+                {activeTab === 'settings' && <Settings theme={theme} setTheme={setTheme} />}
             </Layout>
 
             {/* Modal Overlay */}
