@@ -12,11 +12,11 @@ describe('UpdateStockUseCase', () => {
         id: 'prod-1',
         sku: 'SKU-1',
         name: 'Test Product',
-        category: 'Test',
         price: 100,
         stock: 50,
         unit: 'un',
         minStock: 10,
+        metadata: {},
         createdAt: new Date(),
         updatedAt: new Date(),
     };
@@ -37,7 +37,9 @@ describe('UpdateStockUseCase', () => {
             addMovement: vi.fn().mockResolvedValue(undefined),
         } as unknown as IProductRepository;
 
-        useCase = new UpdateStockUseCase(repository);
+        const mockSyncRepo = { push: vi.fn() } as any;
+        const mockConfigRepo = { getConfig: vi.fn().mockResolvedValue({ isEnabled: false }) } as any;
+        useCase = new UpdateStockUseCase(repository, mockSyncRepo, mockConfigRepo);
     });
 
     it('should add stock when status action is ADD (入庫)', async () => {
@@ -45,6 +47,7 @@ describe('UpdateStockUseCase', () => {
             productId: 'prod-1',
             statusId: '1', // 入庫
             quantity: 10,
+            unitPrice: 0,
             reason: 'Test addition',
         });
 
@@ -58,6 +61,7 @@ describe('UpdateStockUseCase', () => {
             productId: 'prod-1',
             statusId: '2', // 出庫
             quantity: 10,
+            unitPrice: 0,
             reason: 'Test subtraction',
         });
 
@@ -71,6 +75,7 @@ describe('UpdateStockUseCase', () => {
             productId: 'prod-1',
             statusId: '3', // 返品
             quantity: 5,
+            unitPrice: 0,
             reason: 'Test return subtracts stock',
         });
 
@@ -84,6 +89,7 @@ describe('UpdateStockUseCase', () => {
             productId: 'prod-1',
             statusId: '4', // キャンセル
             quantity: 5,
+            unitPrice: 0,
             reason: 'Test cancel adds stock',
         });
 
@@ -97,6 +103,7 @@ describe('UpdateStockUseCase', () => {
             productId: 'prod-1',
             statusId: '5', // 棚卸
             quantity: 100,
+            unitPrice: 0,
             reason: 'Test adjustment',
         });
 
@@ -110,6 +117,7 @@ describe('UpdateStockUseCase', () => {
             productId: 'prod-1',
             statusId: '2', // 出庫
             quantity: 60, // 50 - 60 = -10
+            unitPrice: 0,
             reason: 'Test negative',
         })).rejects.toThrow('Stock cannot be negative');
     });
@@ -121,6 +129,7 @@ describe('UpdateStockUseCase', () => {
             productId: 'invalid',
             statusId: '1',
             quantity: 10,
+            unitPrice: 0,
             reason: 'Test not found',
         })).rejects.toThrow('Product not found');
     });
@@ -130,6 +139,7 @@ describe('UpdateStockUseCase', () => {
             productId: 'prod-1',
             statusId: '99', // Invalid
             quantity: 10,
+            unitPrice: 0,
             reason: 'Test invalid status',
         })).rejects.toThrow('Invalid movement status');
     });

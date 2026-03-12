@@ -25,7 +25,7 @@ export class SqliteDatabase {
         stock INTEGER,
         unit TEXT,
         minStock INTEGER,
-        metadata TEXT,
+        metadata TEXT, -- JSON structure
         imageUrl TEXT,
         createdAt INTEGER,
         updatedAt INTEGER
@@ -49,6 +49,24 @@ export class SqliteDatabase {
         action TEXT CHECK(action IN ('ADD', 'SUBTRACT', 'SET')) NOT NULL,
         color TEXT NOT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS sync_queue (
+        id TEXT PRIMARY KEY,
+        operationType TEXT NOT NULL,
+        payload TEXT NOT NULL, -- JSON body
+        sku TEXT NOT NULL,
+        retryCount INTEGER DEFAULT 0,
+        status TEXT NOT NULL, -- PENDING, PROCESSING, FAILED, COMPLETED
+        errorMessage TEXT,
+        timestamp INTEGER NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS cloud_config (
+        id INTEGER PRIMARY KEY CHECK (id = 1), -- Single row
+        isEnabled INTEGER NOT NULL DEFAULT 0, -- 0: false, 1: true
+        apiToken TEXT,
+        lastSyncedAt INTEGER
+      );
     `);
 
     // Seed mock data if empty
@@ -67,13 +85,14 @@ export class SqliteDatabase {
     ];
 
     const insert = db.prepare(`
-      INSERT INTO products (id, sku, name, category, price, stock, unit, minStock, createdAt, updatedAt)
+      INSERT INTO products (id, sku, name, price, stock, unit, minStock, metadata, createdAt, updatedAt)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const now = new Date().getTime();
     for (const p of products) {
-      insert.run(p.id, p.sku, p.name, p.category, p.price, p.stock, p.unit, p.minStock, now, now);
+      const metadata = JSON.stringify({ category: (p as any).category });
+      insert.run(p.id, p.sku, p.name, p.price, p.stock, p.unit, p.minStock, metadata, now, now);
     }
   }
 }

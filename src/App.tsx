@@ -6,6 +6,8 @@ import ProductList from './presentation/components/ProductList';
 import ActivityLog from './presentation/components/ActivityLog';
 import Settings from './presentation/components/Settings';
 import { useInventory } from './presentation/hooks/useInventory';
+import { useSettings } from './presentation/hooks/useSettings';
+import { useSync } from './presentation/hooks/useSync';
 import { motion, AnimatePresence } from 'framer-motion';
 import StockUpdateForm from './presentation/components/StockUpdateForm';
 import ProductForm from './presentation/components/ProductForm';
@@ -17,6 +19,8 @@ const App: React.FC = () => {
     const [newProductSku, setNewProductSku] = useState('');
     const [activeFilter, setActiveFilter] = useState<string | null>(null);
     const { products, statuses, movements, isLoading, error, addProduct, updateStock, updateStatus, deleteStatus } = useInventory();
+    const { cloudConfig, updateCloudConfig } = useSettings();
+    const { isSyncing, pendingCount, clearCompletedSyncs, triggerSync } = useSync();
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
 
     const handleNavigate = (tab: 'dashboard' | 'products' | 'activity', filter?: string) => {
@@ -71,6 +75,8 @@ const App: React.FC = () => {
                 }} 
                 onAddClick={() => {}}
                 showAddButton={false}
+                isSyncing={isSyncing}
+                pendingCount={pendingCount}
             >
                 {activeTab === 'home' && <Dashboard products={products} movements={movements} isLoading={isLoading} onNavigate={handleNavigate} />}
                 {activeTab === 'products' && (
@@ -91,6 +97,10 @@ const App: React.FC = () => {
                         statuses={statuses} 
                         onUpdateStatus={updateStatus} 
                         onDeleteStatus={deleteStatus}
+                        cloudConfig={cloudConfig}
+                        onUpdateCloudConfig={updateCloudConfig}
+                        onClearSyncQueue={clearCompletedSyncs}
+                        onSyncNow={triggerSync}
                     />
                 )}
             </Layout>

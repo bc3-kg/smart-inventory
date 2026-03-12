@@ -1,6 +1,5 @@
-/* file:///d:/workspace/inventory-app/src/presentation/components/Layout.tsx */
 import React from 'react';
-import { House, Package, Activity, Settings, Plus } from 'lucide-react';
+import { House, Package, Activity, Settings, Plus, Cloud, RefreshCcw, Wifi, WifiOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 
@@ -10,9 +9,19 @@ interface LayoutProps {
     setActiveTab: (tab: 'home' | 'products' | 'activity' | 'settings') => void;
     onAddClick: () => void;
     showAddButton: boolean;
+    isSyncing?: boolean;
+    pendingCount?: number;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onAddClick, showAddButton }) => {
+const Layout: React.FC<LayoutProps> = ({ 
+    children, 
+    activeTab, 
+    setActiveTab, 
+    onAddClick, 
+    showAddButton,
+    isSyncing = false,
+    pendingCount = 0
+}) => {
     const { t } = useTranslation();
 
     return (
@@ -37,9 +46,32 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onAd
                             <span className="text-text">Smart</span>
                             <span className="text-primary italic ml-2">Inventory</span>
                         </h1>
-                        <div className="flex items-center gap-2 mt-3">
-                            <div className="w-2 h-2 rounded-full bg-success shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                            <p className="text-[10px] sm:text-[11px] text-text-dim/60 font-black uppercase tracking-[0.25em]">{t('dashboard_subtitle')}</p>
+                        <div className="flex items-center gap-4 mt-3">
+                            <div className="flex items-center gap-1.5 bg-black/5 dark:bg-white/5 px-3 py-1 rounded-full border border-black/5 dark:border-white/5">
+                                <div className={`w-1.5 h-1.5 rounded-full ${navigator.onLine ? 'bg-success' : 'bg-error'} shadow-[0_0_8px_rgba(16,185,129,0.4)]`} />
+                                <p className="text-[9px] text-text-dim/60 font-black uppercase tracking-[0.2em]">{navigator.onLine ? 'Online' : 'Offline'}</p>
+                            </div>
+                            
+                            {(pendingCount > 0 || isSyncing) && (
+                                <motion.div 
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="flex items-center gap-2 bg-primary/10 border border-primary/20 px-3 py-1 rounded-full"
+                                >
+                                    <Cloud size={10} className="text-primary" />
+                                    <p className="text-[9px] text-primary font-black uppercase tracking-[0.1em]">
+                                        {isSyncing ? 'Syncing...' : `${pendingCount} Pending`}
+                                    </p>
+                                    {isSyncing && (
+                                        <motion.div
+                                            animate={{ rotate: 360 }}
+                                            transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                                        >
+                                            <RefreshCcw size={8} className="text-primary" />
+                                        </motion.div>
+                                    )}
+                                </motion.div>
+                            )}
                         </div>
                     </div>
 

@@ -1,7 +1,8 @@
 # 📦 Smart Inventory (スマート在庫管理システム)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/Version-1.3.0-emerald.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.5.0-emerald.svg)]()
+[![Zaico Sync](https://img.shields.io/badge/Cloud-Zaico_Enabled-blue.svg)]()
 [![Built with React](https://img.shields.io/badge/Engine-React_18-indigo.svg)]()
 
 > **「モバイル・ファースト」と「デスクトップ・プレミアム」を両立した、次世代の在庫管理ソリューション。**
@@ -15,9 +16,10 @@
 Smart Inventoryは単なるデータベースではありません。現場の士気を高める洗練されたデザインと、直感的な操作性を追求しています。
 
 <p align="center">
-  <img src="public/screenshots/dashboard.png" width="31%" alt="ダッシュボード" title="直感的なダッシュボード" style="display: inline-block; margin: 0 1%;" />
-  <img src="public/screenshots/inventory.png" width="31%" alt="在庫一覧" title="スマートな在庫一覧" style="display: inline-block; margin: 0 1%;" />
-  <img src="public/screenshots/activity.png" width="31%" alt="アクティビティ履歴" title="詳細な履歴ログ" style="display: inline-block; margin: 0 1%;" />
+  <img src="public/screenshots/dashboard.png" width="24%" alt="ダッシュボード" title="直感的なダッシュボード" style="display: inline-block; margin: 0 0.5%;" />
+  <img src="public/screenshots/inventory.png" width="24%" alt="在庫一覧" title="スマートな在庫一覧" style="display: inline-block; margin: 0 0.5%;" />
+  <img src="public/screenshots/activity.png" width="24%" alt="アクティビティ履歴" title="詳細な履歴ログ" style="display: inline-block; margin: 0 0.5%;" />
+  <img src="public/screenshots/settings_sync.png" width="24%" alt="クラウド設定" title="zaico 同期設定" style="display: inline-block; margin: 0 0.5%;" />
 </p>
 
 ---
@@ -36,8 +38,11 @@ Smart Inventoryは単なるデータベースではありません。現場の�
 ### 🔔 インテリジェントな在庫アラート
 設定した閾値を下回ると、システムが視覚的なアラートで即座に通知。「在庫切れ」による機会損失をゼロにします。
 
-### 📱 究極のモバイル最適化
-スマホ画面でも、クリッピング（表示欠け）のない完璧なレスポンシブデザイン。倉庫内を移動しながら、片手の操作で入出庫を完結できます。
+### 📱 究極のモバイル最適化 / PWA
+スマホ画面でも、クリッピング（表示欠け）のない完璧なレスポンシブデザイン。倉庫内を移動しながら、片手の操作で入出庫を完結。ブラウザ環境では `localStorage` を利用したオフライン動作に対応しています。
+
+### 🔄 zaico クラウド連携（リアルタイム同期）
+外部在庫管理サービス **zaico** との API 連携機能を搭載。アプリで行った在庫変動を自動的にクラウドへ同期。同期キュー管理により、一時的なオフライン時でも復帰後に一括同期が可能です。
 
 ### 🌗 プレミアム・ダークモード
 視認性に優れたダークモードを標準搭載。暗い倉庫内でも目が疲れにくく、SKUコードの読み取りミスを最小限に抑えます。
@@ -50,7 +55,9 @@ Smart Inventoryは単なるデータベースではありません。現場の�
 *   **スタイリング**: Tailwind CSS (プレミアム配色・ガラスモーフィズム採用)
 *   **アニメーション**: Framer Motion
 *   **多言語対応**: react-i18next (日本語/英語)
-*   **データベース**: SQLite3 (堅牢なデータ整合性を保証)
+*   **データベース (ハイブリッド)**: 
+    *   **ブラウザ/Web版**: `localStorage` ベースの InMemory リポジトリ（即時利用可能）
+    *   **デスクトップ/Node版**: SQLite3 (`better-sqlite3`) によるファイル永続化
 
 ---
 
@@ -96,9 +103,15 @@ Smart Inventoryは単なるデータベースではありません。現場の�
 - **在庫金額**: 全商品の「現在庫 × 単価」の合計金額をリアルタイムに集計表示します。
 - **在庫流動性分析**: 過去14日間の入出庫合計数量をグラフ化し、日ごとの稼働率を可視化します。
 
-### 3. ステータスと履歴
+### 3. zaico クラウド同期の設定
+設定画面の「zaico クラウド連携」セクションから機能を有効化できます。
+1.  **APIトークンの入力**: zaico の設定画面から取得した API トークンを入力します。
+2.  **同期スイッチ**: 同期を ON にすると、以降のすべての入出庫がバックグラウンドで zaico へ送信されます。
+3.  **同期状態の確認**: ヘッダーに同期待ちの件数や同期中アニメーションが表示されます。失敗した場合は自動的にリトライされます。
+
+### 4. ステータスと履歴
 - **設定**: 業務フローに応じて、各処理の名称や色を変更できます。
-- **アクティビティ履歴**: CSV出力に対応しており、各取引の単価や合計金額もエクスポート可能です。
+- **アクティビティ履歴**: 各取引の単価や合計金額も含め、すべての行動が記録されます。
 
 ### 大規模データへの対応
 SQLiteをバックエンドに採用し、標準的なPC環境でも数万点以上のSKUを軽快に処理可能。ACID準拠により、データの破損を防ぎます。
@@ -110,7 +123,7 @@ SQLiteをバックエンドに採用し、標準的なPC環境でも数万点以
 
 ## 🗺️ ロードマップ
 
-- [ ] **クラウド同期プロトコル**: WebSocketsを利用した複数デバイス間のリアルタイム同期。
+- [x] **クラウド同期プロトコル**: zaico API を利用したリアルタイム在庫連携。
 - [ ] **バーコード一括読取**: カメラを利用した高速な連続スキャン機能。
 
 ---

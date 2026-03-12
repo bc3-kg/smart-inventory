@@ -4,6 +4,8 @@ import { Languages, Moon, Bell, Info, ShieldCheck, ChevronRight, Sun, ExternalLi
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { MovementStatus } from '../../domain/entities/Product';
+import { CloudConfig } from '../../domain/entities/CloudConfig';
+import { Cloud, Key, CheckCircle2, XCircle } from 'lucide-react';
 
 interface SettingsProps {
     theme: string;
@@ -11,11 +13,25 @@ interface SettingsProps {
     statuses: MovementStatus[];
     onUpdateStatus: (status: MovementStatus) => Promise<void>;
     onDeleteStatus: (id: string) => Promise<void>;
+    cloudConfig: CloudConfig;
+    onUpdateCloudConfig: (config: CloudConfig) => Promise<void>;
+    onClearSyncQueue?: () => Promise<void>;
+    onSyncNow?: () => Promise<void>;
 }
 
 type SettingsView = 'main' | 'statuses';
 
-const Settings: React.FC<SettingsProps> = ({ theme, setTheme, statuses, onUpdateStatus, onDeleteStatus }) => {
+const Settings: React.FC<SettingsProps> = ({ 
+    theme, 
+    setTheme, 
+    statuses, 
+    onUpdateStatus, 
+    onDeleteStatus,
+    cloudConfig,
+    onUpdateCloudConfig,
+    onClearSyncQueue,
+    onSyncNow
+}) => {
     const { t, i18n } = useTranslation();
     const [view, setView] = useState<SettingsView>('main');
     const [notifications, setNotifications] = useState(localStorage.getItem('notifications') !== 'false');
@@ -92,6 +108,71 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, statuses, onUpdate
                                 value={t('settings_view_wiki')}
                                 onClick={() => window.open('https://app.devin.ai/org/bc3-kg/wiki/bc3-kg/smart-inventory', '_blank')}
                             />
+                        </SettingSection>
+
+                        <SettingSection title="zaico クラウド連携">
+                            <div className="card-premium p-6 space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`p-3 rounded-2xl ${cloudConfig.isEnabled ? 'bg-success/20 text-success' : 'bg-text-dim/10 text-text-dim'}`}>
+                                            <Cloud size={24} />
+                                        </div>
+                                        <div>
+                                            <div className="font-black text-text">同期ステータス</div>
+                                            <div className="text-xs font-medium text-text-dim">{cloudConfig.isEnabled ? 'オンライン同期有効' : '同期無効'}</div>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => onUpdateCloudConfig({ ...cloudConfig, isEnabled: !cloudConfig.isEnabled })}
+                                        className={`w-14 h-8 rounded-full transition-all relative ${cloudConfig.isEnabled ? 'bg-success' : 'bg-text-dim/20'}`}
+                                    >
+                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${cloudConfig.isEnabled ? 'left-7' : 'left-1'}`} />
+                                    </button>
+                                </div>
+
+                                <div className="space-y-4 pt-4 border-t border-black/5 dark:border-white/5">
+                                    <div className="flex items-center gap-3 text-text-dim font-black text-xs uppercase tracking-widest">
+                                        <Key size={14} /> zaico API Token
+                                    </div>
+                                    <div className="relative">
+                                        <input 
+                                            type="password"
+                                            value={cloudConfig.apiToken}
+                                            onChange={(e) => onUpdateCloudConfig({ ...cloudConfig, apiToken: e.target.value })}
+                                            placeholder="Enter your token..."
+                                            className="input-premium w-full pr-12"
+                                        />
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                            {cloudConfig.apiToken ? <CheckCircle2 size={18} className="text-success" /> : <XCircle size={18} className="text-text-dim/30" />}
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] text-text-dim/60 font-medium leading-relaxed">
+                                        zaicoの「設定」&gt;「API連携」から取得したAPIトークンを入力してください。
+                                    </p>
+                                </div>
+
+                                {cloudConfig.lastSyncedAt && (
+                                    <div className="pt-2 flex items-center justify-between text-[10px] font-black text-text-dim/40 uppercase tracking-tighter">
+                                        <span>最終同期</span>
+                                        <span>{cloudConfig.lastSyncedAt.toLocaleString()}</span>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-2 gap-3 pt-4 border-t border-black/5 dark:border-white/5">
+                                    <button 
+                                        onClick={onSyncNow}
+                                        className="flex items-center justify-center gap-2 py-3 rounded-xl bg-primary/10 text-primary text-[11px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-sm"
+                                    >
+                                        今すぐ同期
+                                    </button>
+                                    <button 
+                                        onClick={onClearSyncQueue}
+                                        className="flex items-center justify-center gap-2 py-3 rounded-xl bg-black/5 dark:bg-white/5 text-text-dim text-[11px] font-black uppercase tracking-widest hover:bg-error/10 hover:text-error transition-all"
+                                    >
+                                        履歴を削除
+                                    </button>
+                                </div>
+                            </div>
                         </SettingSection>
                     </motion.div>
                 ) : (
