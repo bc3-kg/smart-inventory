@@ -1,5 +1,5 @@
 /* file:///d:/workspace/inventory-app/src/domain/repositories/IProductRepository.ts */
-import { Product, StockMovement } from '../entities/Product';
+import { Product, StockMovement, MovementStatus } from '../entities/Product';
 
 export interface IProductRepository {
     findAll(): Promise<Product[]>;
@@ -11,4 +11,10 @@ export interface IProductRepository {
 
     addMovement(movement: StockMovement): Promise<void>;
     getMovements(productId: string): Promise<StockMovement[]>;
+    getAllMovements(): Promise<StockMovement[]>;
+
+    getMovementStatuses(): Promise<MovementStatus[]>;
+    saveMovementStatus(status: MovementStatus): Promise<void>;
+    deleteMovementStatus(id: string): Promise<void>;
 }
+

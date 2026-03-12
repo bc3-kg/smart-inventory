@@ -11,11 +11,11 @@ export class SqliteProductRepository implements IProductRepository {
             id: row.id,
             sku: row.sku,
             name: row.name,
-            category: row.category,
             price: row.price,
             stock: row.stock,
             unit: row.unit,
             minStock: row.minStock,
+            metadata: row.metadata ? JSON.parse(row.metadata) : {},
             imageUrl: row.imageUrl || undefined,
             createdAt: new Date(row.createdAt),
             updatedAt: new Date(row.updatedAt),
@@ -39,7 +39,7 @@ export class SqliteProductRepository implements IProductRepository {
 
     async save(product: Product): Promise<void> {
         const stmt = this.db.prepare(`
-      INSERT INTO products (id, sku, name, category, price, stock, unit, minStock, imageUrl, createdAt, updatedAt)
+      INSERT INTO products (id, sku, name, price, stock, unit, minStock, metadata, imageUrl, createdAt, updatedAt)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
@@ -47,11 +47,11 @@ export class SqliteProductRepository implements IProductRepository {
             product.id,
             product.sku,
             product.name,
-            product.category,
             product.price,
             product.stock,
             product.unit,
             product.minStock,
+            JSON.stringify(product.metadata),
             product.imageUrl || null,
             product.createdAt.getTime(),
             product.updatedAt.getTime()
@@ -61,18 +61,18 @@ export class SqliteProductRepository implements IProductRepository {
     async update(product: Product): Promise<void> {
         const stmt = this.db.prepare(`
       UPDATE products 
-      SET sku = ?, name = ?, category = ?, price = ?, stock = ?, unit = ?, minStock = ?, imageUrl = ?, updatedAt = ?
+      SET sku = ?, name = ?, price = ?, stock = ?, unit = ?, minStock = ?, metadata = ?, imageUrl = ?, updatedAt = ?
       WHERE id = ?
     `);
 
         stmt.run(
             product.sku,
             product.name,
-            product.category,
             product.price,
             product.stock,
             product.unit,
             product.minStock,
+            JSON.stringify(product.metadata),
             product.imageUrl || null,
             new Date().getTime(),
             product.id
@@ -85,15 +85,17 @@ export class SqliteProductRepository implements IProductRepository {
 
     async addMovement(movement: StockMovement): Promise<void> {
         const stmt = this.db.prepare(`
-      INSERT INTO movements (id, productId, type, quantity, reason, timestamp)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO movements (id, productId, statusId, quantity, unitPrice, totalAmount, reason, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
         stmt.run(
             movement.id,
             movement.productId,
-            movement.type,
+            movement.statusId,
             movement.quantity,
+            movement.unitPrice,
+            movement.totalAmount,
             movement.reason,
             movement.timestamp.getTime()
         );
@@ -104,10 +106,44 @@ export class SqliteProductRepository implements IProductRepository {
         return rows.map(row => ({
             id: row.id,
             productId: row.productId,
-            type: row.type as 'IN' | 'OUT',
+            statusId: row.statusId,
             quantity: row.quantity,
+            unitPrice: row.unitPrice || 0,
+            totalAmount: row.totalAmount || 0,
             reason: row.reason,
             timestamp: new Date(row.timestamp)
         }));
+    }
+
+    async getAllMovements(): Promise<StockMovement[]> {
+        const rows = this.db.prepare('SELECT * FROM movements ORDER BY timestamp DESC').all() as any[];
+        return rows.map(row => ({
+            id: row.id,
+            productId: row.productId,
+            statusId: row.statusId,
+            quantity: row.quantity,
+            unitPrice: row.unitPrice || 0,
+            totalAmount: row.totalAmount || 0,
+            reason: row.reason,
+            timestamp: new Date(row.timestamp)
+        }));
+    }
+
+    async getMovementStatuses(): Promise<any[]> {
+        const rows = this.db.prepare('SELECT * FROM movement_statuses').all();
+        return rows;
+    }
+
+    async saveMovementStatus(status: any): Promise<void> {
+        const stmt = this.db.prepare(`
+            INSERT INTO movement_statuses (id, name, action, color)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET name=excluded.name, action=excluded.action, color=excluded.color
+        `);
+        stmt.run(status.id, status.name, status.action, status.color);
+    }
+
+    async deleteMovementStatus(id: string): Promise<void> {
+        this.db.prepare('DELETE FROM movement_statuses WHERE id = ?').run(id);
     }
 }

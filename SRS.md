@@ -37,34 +37,40 @@ graph TD
 | Layer              | Component             | Responsibility                                                    |
 | :----------------- | :-------------------- | :---------------------------------------------------------------- |
 | **Presentation**   | `Layout.tsx`          | Viewport management, Header/Nav state, Ambient gradients.         |
-|                    | `Dashboard.tsx`       | Visualizing stock velocity, analytic chart rendering.             |
-|                    | `ProductList.tsx`     | Search logic, grid-based card layout, stock status alerts.        |
+| Presentation | `Dashboard.tsx` | Visualizing total value and stock velocity (moving average/sum for 14 days). |
+|              | `ProductList.tsx` | SKU-centric list, search, CSV export, and filtered views (e.g., Low Stock). |
 |                    | `useInventory`        | State management using React Hooks (Redux-less architecture).     |
-| **Application**    | `AddProductUseCase`   | Business rules: SKU validation, UUID generation, entity creation. |
-|                    | `ListProductsUseCase` | Data retrieval logic, filtering, sorting.                         |
+| **Application**    | `ListProductsUseCase` | Data retrieval logic, filtering, sorting.                         |
+|                    | `UpdateStockUseCase`  | Advanced stock calculation, movement tracking, and metadata updates. |
 | **Domain**         | `Product Entity`      | Core business model/schema.                                       |
+|                    | `MovementStatus`      | Movement type definitions (IN, OUT, RETURN, etc.).                |
 |                    | `IProductRepo`        | Behavioral contract (Interface) for data access.                  |
 | **Infrastructure** | `SqliteProductRepo`   | implementation of IProductRepo using `better-sqlite3`.            |
 |                    | `SqliteDatabase`      | DB Singleton instance & Schema migration manager.                 |
 
-### Access Sequence Diagram (Product Addition)
+
+### Access Sequence Diagram (Stock Movement/Inventory Update)
 ```mermaid
 sequenceDiagram
     participant U as User (UI)
     participant H as useInventory
-    participant UC as AddProductUseCase
+    participant UC as UpdateStockUseCase
     participant R as ProductRepository
     participant DB as SQLite3
 
-    U->>H: addProduct(formData)
-    H->>UC: execute(data)
-    UC->>R: findBySku(sku)
-    R->>DB: SELECT * FROM products WHERE sku = ?
-    DB-->>R: null (if unique)
-    UC->>R: save(newEntity)
-    R->>DB: INSERT INTO products (...)
-    UC-->>H: entity
-    H->>U: Update local state & close modal
+    U->>H: updateStock({productId, statusId, quantity, reason, productData})
+    H->>UC: execute(params)
+    UC->>R: getMovementStatuses()
+    R-->>UC: StatusEntity (Action: ADD/SUB/SET)
+    UC->>R: findById(id)
+    R-->>UC: ProductEntity
+    Note over UC: Calculate newStock based on status.action
+    UC->>R: update(updatedProduct)
+    R->>DB: UPDATE products SET stock = ? WHERE id = ?
+    UC->>R: addMovement(movement)
+    R->>DB: INSERT INTO movements (...)
+    UC-->>H: void
+    H->>U: Refresh product list & Close modal
 ```
 
 ## 4. UI/UX Specifications
@@ -81,8 +87,124 @@ sequenceDiagram
 - **Desktop (> 1024px)**: 4 columns for stats, 3 columns for lists, container padding scaled to `xl:px-40`.
 
 ## 5. Entities & Schema
-- **Product**: `id(UUID)`, `sku(unique)`, `name`, `category`, `price`, `stock`, `unit`, `minStock`.
-- **Movement**: `id`, `productId`, `type(IN/OUT)`, `quantity`, `reason`, `timestamp`.
 
-## 6. Port Specification
+### Domain Entities
+- **Product**: `id(UUID)`, `sku(unique)`, `name`, `price`, `stock`, `unit`, `minStock`, `metadata(JSON)`, `imageUrl`, `createdAt`, `updatedAt`.
+    - `metadata`: Stores `category`, `location`, `condition`, `notes`.
+- **MovementStatus**: `id`, `name`, `action(ADD|SUBTRACT|SET)`, `color`.
+- **StockMovement**: `id`, `productId`, `statusId`, `quantity`, `unitPrice`, `totalAmount`, `reason`, `timestamp`.
+
+### SQLite Physical Table Definition
+```sql
+-- Products Table
+CREATE TABLE products (
+    id TEXT PRIMARY KEY,
+    sku TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    price REAL DEFAULT 0,
+    stock REAL DEFAULT 0,
+    unit TEXT,
+    minStock REAL DEFAULT 0,
+    metadata TEXT, -- JSON string: {category, location, condition, notes}
+    imageUrl TEXT,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL
+);
+
+-- Movement Statuses Table
+CREATE TABLE movement_statuses (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    action TEXT CHECK(action IN ('ADD', 'SUBTRACT', 'SET')) NOT NULL,
+    color TEXT NOT NULL
+);
+
+-- Movements Table
+CREATE TABLE movements (
+    id TEXT PRIMARY KEY,
+    productId TEXT NOT NULL,
+    statusId TEXT NOT NULL,
+    quantity REAL NOT NULL,
+    unitPrice REAL DEFAULT 0,
+    totalAmount REAL DEFAULT 0,
+    reason TEXT,
+    timestamp INTEGER NOT NULL,
+    FOREIGN KEY (productId) REFERENCES products(id),
+    FOREIGN KEY (statusId) REFERENCES movement_statuses(id)
+);
+```
+
+## 6. UI Wireframes
+
+### [WF-01] Inventory List (Home/Products)
+```text
+| Smart Inventory                       |
++---------------------------------------+
+| [ Search SKU / Name... ] [Filter]     |
++---------------------------------------+
+| Grid:                                 |
+| +-----------+  +-----------+          |
+| | iPhone 15 |  | MacBook   |          |
+| | Qty: 45   |  | Qty: 12   |          |
+| +-----------+  +-----------+          |
++---------------------------------------+
+| [Home] [Inventory] [History] [Settings]|
++---------------------------------------+
+```
+
+### [WF-02] Stock Movement Entry (Modal)
+```text
++---------------------------------------+
+| Update Stock: Product Name       (X)  |
++---------------------------------------+
+| [ Status ]                            |
+| ( IN ) ( OUT ) ( RET ) ( CANCEL) (ADJ)|
++---------------------------------------+
+| Metadata:                             |
+| Name: [ iPhone 15 ] Cat: [ Smartph ]  |
+| Loc: [ Wh A ] Cond: [ New ]           |
++---------------------------------------+
+| Quantity: [ 10 ]  Unit: [ un ]        |
+| Current: 45  -> Result: 55            |
++---------------------------------------+
+| Reason: [ Optional text... ]          |
++---------------------------------------+
+| [       SAVE MOVEMENT        ]        |
++---------------------------------------+
+```
+
+## 7. API I/O Specification (Use Case Level)
+
+### UpdateStockUseCase.execute(input)
+- **Input**:
+    - `productId`: String (UUID)
+    - `statusId`: String (ID of Status Entity)
+    - `quantity`: Number
+    - `reason`: String
+    - `productData`: { name, category, unit, location, condition }
+- **Output**: `Promise<void>`
+- **Errors**: `Product not found`, `Invalid movement status`, `Stock cannot be negative`.
+
+
+## 8. State Transition Sequence Diagram
+
+### Inventory Change Lifecycle
+```mermaid
+stateDiagram-v2
+    [*] --> Idle: App Load
+    Idle --> Selecting: Click Product Card
+    Selecting --> Editing: Open Stock Modal
+    
+    state Editing {
+        [*] --> ChoosingStatus: Select Movement Type (StatusID)
+        ChoosingStatus --> Calculating: Input Quantity
+        Calculating --> Validating: Click Save
+        Validating --> Persisting: Logic Check (Stock >= 0)
+        Validating --> ChoosingStatus: Error (Negative Stock)
+    }
+    
+    Persisting --> Idle: Refresh UI & Close Modal
+```
+
+## 9. Port Specification
 - Default fixed port: `5555`.

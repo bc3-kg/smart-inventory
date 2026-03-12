@@ -21,11 +21,11 @@ export class SqliteDatabase {
         id TEXT PRIMARY KEY,
         sku TEXT UNIQUE,
         name TEXT,
-        category TEXT,
         price REAL,
         stock INTEGER,
         unit TEXT,
         minStock INTEGER,
+        metadata TEXT,
         imageUrl TEXT,
         createdAt INTEGER,
         updatedAt INTEGER
@@ -34,11 +34,20 @@ export class SqliteDatabase {
       CREATE TABLE IF NOT EXISTS movements (
         id TEXT PRIMARY KEY,
         productId TEXT,
-        type TEXT,
-        quantity INTEGER,
+        statusId TEXT,
+        quantity REAL,
+        unitPrice REAL,
+        totalAmount REAL,
         reason TEXT,
         timestamp INTEGER,
         FOREIGN KEY(productId) REFERENCES products(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS movement_statuses (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        action TEXT CHECK(action IN ('ADD', 'SUBTRACT', 'SET')) NOT NULL,
+        color TEXT NOT NULL
       );
     `);
 

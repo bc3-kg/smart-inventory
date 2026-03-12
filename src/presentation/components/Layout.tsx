@@ -9,9 +9,10 @@ interface LayoutProps {
     activeTab: 'home' | 'products' | 'activity' | 'settings';
     setActiveTab: (tab: 'home' | 'products' | 'activity' | 'settings') => void;
     onAddClick: () => void;
+    showAddButton: boolean;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onAddClick }) => {
+const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onAddClick, showAddButton }) => {
     const { t } = useTranslation();
 
     return (
@@ -42,14 +43,21 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onAd
                         </div>
                     </div>
 
-                    <motion.button
-                        whileHover={{ scale: 1.05, rotate: 5 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={onAddClick}
-                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-primary text-white flex items-center justify-center shadow-xl shadow-primary/30 transition-all z-20"
-                    >
-                        <Plus size={32} />
-                    </motion.button>
+                    <AnimatePresence>
+                        {showAddButton && (
+                            <motion.button
+                                initial={{ opacity: 0, scale: 0.5, rotate: -20 }}
+                                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                                exit={{ opacity: 0, scale: 0.5, rotate: 20 }}
+                                whileHover={{ scale: 1.05, rotate: 5 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={onAddClick}
+                                className="w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-primary text-white flex items-center justify-center shadow-xl shadow-primary/30 transition-all z-20"
+                            >
+                                <Plus size={32} />
+                            </motion.button>
+                        )}
+                    </AnimatePresence>
                 </header>
 
                 <main className="flex-1 w-full pb-36">
@@ -70,7 +78,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onAd
 
             {/* Platform Navigation */}
             <nav className="fixed bottom-8 left-0 right-0 z-[100] flex justify-center px-4">
-                <div className="w-full max-w-[520px] bg-surface/80 backdrop-blur-3xl border border-black/5 dark:border-white/5 shadow-2xl rounded-[40px] flex items-center justify-around p-2.5">
+                <div className="w-full max-w-[500px] bg-surface/80 backdrop-blur-3xl border border-black/5 dark:border-white/5 shadow-2xl rounded-[40px] flex items-center justify-around p-2.5">
                     <NavButton
                         icon={<House size={24} />}
                         label={t('nav_home')}
